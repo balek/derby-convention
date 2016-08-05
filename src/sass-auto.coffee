@@ -1,5 +1,7 @@
-sass = require 'node-sass'
 path = require 'path'
+
+sass = require 'node-sass'
+_ = require 'lodash'
 resolve = require 'resolve'
 
 util = require './util'
@@ -20,20 +22,20 @@ module.exports = (app) ->
         options ||= {}
         for name in app.components
             try
-                compPath = resolve.sync name, resolveOpts
-                file += "\n@import '#{compPath}'\n"
+                resolve.sync name, resolveOpts
+                file += "\n@import '#{name}'\n"
         for moduleName, moduleContents of app.modules
             try
-                compPath = resolve.sync moduleName, resolveOpts
-                file += "\nbody.#{moduleName}\n  @import '#{compPath}'\n"
+                resolve.sync moduleName, resolveOpts
+                file += "\nbody.#{moduleName}\n  @import '#{moduleName}'\n"
             for name in moduleContents.components
                 try
-                    compPath = resolve.sync moduleName + '/components/' + name, resolveOpts
-                    file += "\n@import '#{compPath}'\n"
+                    resolve.sync moduleName + '/components/' + name, resolveOpts
+                    file += "\n@import '#{moduleName}/components/#{name}'\n"
             for name in moduleContents.pages
                 try
-                    ctrlPath = resolve.sync moduleName + '/pages/' + name, resolveOpts
-                    file += "\nbody.#{moduleName}-pages-#{name}\n  @import '#{ctrlPath}'\n"
+                    resolve.sync moduleName + '/pages/' + name, resolveOpts
+                    file += "\nbody.#{moduleName}-pages-#{name}\n  @import '#{moduleName}/pages/#{name}'\n"
 
         result = sass.renderSync
             data: file
@@ -42,10 +44,13 @@ module.exports = (app) ->
             outputStyle: 'compressed'
             importer: (url, prev) ->
                 try
+                    basedir =
+                        if prev == 'stdin'
+                            path.dirname require.main.filename
+                        else
+                            path.dirname prev
                     filePath = resolve.sync url,
-                        basedir: path.dirname prev
-                        extensions: ['.sass', '.scss', '.css']
-                        packageFilter: (p) -> delete p.main
+                        _.extend resolveOpts, basedir: basedir
                     pathParse = path.parse filePath
                     if pathParse.ext == '.css'
                         # Если указать путь с расширением, @import будет передаваться на клиента,
@@ -53,6 +58,8 @@ module.exports = (app) ->
                         # но тогда в node-sass возникает конфликт при наличии нескольких файлов с разным расширением.
                         filePath = path.join pathParse.dir, pathParse.name
                     file: filePath
+                catch e
+                    throw e unless e.message?.startsWith 'Cannot find module'
 
         css: result.css.toString()
         files: result.stats.includedFiles
