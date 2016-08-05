@@ -40,9 +40,12 @@ module.exports = (app) ->
             indentedSyntax: path.extname(filename) == '.sass'
             includePaths: [path.dirname filename]
             outputStyle: 'compressed'
-            importer: (url) ->
+            importer: (url, prev) ->
                 try
-                    filePath = resolve.sync url, extensions: ['.sass', '.scss', '.css'], packageFilter: (p) -> delete p.main
+                    filePath = resolve.sync url,
+                        basedir: path.dirname prev
+                        extensions: ['.sass', '.scss', '.css']
+                        packageFilter: (p) -> delete p.main
                     pathParse = path.parse filePath
                     if pathParse.ext == '.css'
                         # Если указать путь с расширением, @import будет передаваться на клиента,
