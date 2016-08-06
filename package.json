@@ -1,10 +1,12 @@
 {
   "name": "derby-convention",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "",
   "main": "lib/index.js",
   "scripts": {
-    "build": "coffee -o lib src"
+    "build": "coffee -bo lib src",
+    "prepublish": "npm run build",
+    "postpublish": "git push"
   },
   "dependencies": {
     "derby-controller": "^0.5.0",
