@@ -12,6 +12,7 @@ module.exports = (app) ->
     app.styleExtensions.push '.scss'
 
     resolveOpts =
+        paths: module.constructor.globalPaths
         extensions: extensions = ['.sass', '.scss', '.css']
         packageFilter: (p) ->
             for e in extensions
@@ -30,12 +31,14 @@ module.exports = (app) ->
                 file += "\nbody.#{moduleName}\n  @import '#{moduleName}'\n"
             for name in moduleContents.components
                 try
-                    resolve.sync moduleName + '/components/' + name, resolveOpts
-                    file += "\n@import '#{moduleName}/components/#{name}'\n"
+                    p = path.join moduleName, 'components', name
+                    resolve.sync p, resolveOpts
+                    file += "\n@import '#{p}'\n"
             for name in moduleContents.pages
                 try
-                    resolve.sync moduleName + '/pages/' + name, resolveOpts
-                    file += "\nbody.#{moduleName}-pages-#{name}\n  @import '#{moduleName}/pages/#{name}'\n"
+                    p = path.join moduleName, 'pages', name
+                    resolve.sync p, resolveOpts
+                    file += "\nbody.#{p.replace /\//g, '-'}\n  @import '#{p}'\n"
 
         result = sass.renderSync
             data: file

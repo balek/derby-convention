@@ -36,13 +36,16 @@ module.exports = (app, options) ->
 
         app.components = options.components
         app.modules = {}
+        globalPaths = module.constructor.globalPaths
         for moduleInfo in options.modules
             if _.isString moduleInfo
                 moduleInfo = name: moduleInfo
             moduleContents = app.modules[moduleInfo.name] =
                 path:
                     if moduleInfo.name
-                        resolve.sync moduleInfo.name, isFile: util.isDirectory
+                        resolve.sync moduleInfo.name,
+                            isFile: util.isDirectory
+                            paths: globalPaths
                     else
                         dirname
                 url: moduleInfo.url ? '/' + moduleInfo.name
@@ -51,14 +54,16 @@ module.exports = (app, options) ->
                 model: []
 
             try
-                require.resolve moduleInfo.name
+                require.resolve moduleInfo.name,
+                    paths: globalPaths
                 moduleContents.index = true
             catch e
                 throw e unless e.code == 'MODULE_NOT_FOUND'
 
             try
                 if moduleInfo.name
-                    require.resolve moduleInfo.name + '/opts'
+                    require.resolve moduleInfo.name + '/opts',
+                        paths: globalPaths
                     moduleContents.opts = true
             catch e
                 throw e unless e.code == 'MODULE_NOT_FOUND'
@@ -120,8 +125,8 @@ module.exports = (app, options) ->
                 ctrl::path = moduleContents.url + ctrl::path
             else
                 ctrl::path =
-                    for path in ctrl::path
-                        moduleContents.url + ctrl::path
+                    for p in ctrl::path
+                        moduleContents.url + p
                     
             app.controller ctrl
         for name in moduleContents.model
