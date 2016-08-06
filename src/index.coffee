@@ -20,12 +20,12 @@ module.exports = (app, options) ->
         app.on 'bundle', (bundler) ->
             bundler.require _.flatMapDeep app.modules, (moduleContents, moduleName) -> [
                     if moduleContents.index then moduleName else []
-                    if moduleContents.opts then moduleName + '/opts'
+                    if moduleContents.opts then moduleName + '/opts' else []
                     _.map moduleContents.components, (p) -> if moduleName then moduleName + '/components/' + p else 'components/' + p
                     _.map moduleContents.pages, (p) -> if moduleName then moduleName + '/pages/' + p else 'pages/' + p
                     _.map moduleContents.model, (p) -> if moduleName then moduleName + '/model/' + p else 'model/' + p
                 ]
-            bundler.require app.components
+            bundler.require app.components or []
 
             bundler.exclude 'app-modules'
             a = new require('stream').Readable()
