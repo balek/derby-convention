@@ -122,7 +122,7 @@ module.exports = (app, options) ->
                 ctrl::name = 'pages:' + name
             ctrl::view = ctrlPath
             if _.isString ctrl::path
-                ctrl::path = moduleInfo.url + ctrl::path
+                ctrl::path = moduleInfo.url + ctrl::path  or  '/'
             else
                 ctrl::path =
                     for p in ctrl::path
