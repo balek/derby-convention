@@ -95,12 +95,17 @@ module.exports = (app, options) ->
     for name in options.components or []
         app.component require name
 
-    for moduleName, moduleInfo of app.modules
+    for moduleInfo in options.modules
+        if _.isString moduleInfo
+            moduleInfo = name: moduleInfo
+        moduleName = moduleInfo.name
+        _.defaults moduleInfo, app.modules[moduleName]
+
         require moduleName if moduleInfo.index
 
         if moduleInfo.opts
             opts = require moduleName + '/opts'
-            _.extend opts, moduleInfo
+            _.assign opts, moduleInfo
 
         for name in moduleInfo.components
             compPath = path.join moduleInfo.path, 'components', name
