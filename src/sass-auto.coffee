@@ -25,16 +25,16 @@ module.exports = (app) ->
             try
                 resolve.sync name, resolveOpts
                 file += "\n@import '#{name}'\n"
-        for moduleName, moduleContents of app.modules
+        for moduleName, moduleInfo of app.modules
             try
                 resolve.sync moduleName, resolveOpts
                 file += "\nbody.#{moduleName}\n  @import '#{moduleName}'\n"
-            for name in moduleContents.components
+            for name in moduleInfo.components
                 try
                     p = path.join moduleName, 'components', name
                     resolve.sync p, resolveOpts
                     file += "\n@import '#{p}'\n"
-            for name in moduleContents.pages
+            for name in moduleInfo.pages
                 try
                     p = path.join moduleName, 'pages', name
                     resolve.sync p, resolveOpts
@@ -53,7 +53,7 @@ module.exports = (app) ->
                         else
                             path.dirname prev
                     filePath = resolve.sync url,
-                        _.extend resolveOpts, basedir: basedir
+                        _.extend basedir: basedir, resolveOpts
                     pathParse = path.parse filePath
                     if pathParse.ext == '.css'
                         # Если указать путь с расширением, @import будет передаваться на клиента,

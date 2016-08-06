@@ -18,12 +18,12 @@ module.exports = (app, options) ->
         fs = derby.util.serverRequire module, 'fs'
 
         app.on 'bundle', (bundler) ->
-            bundler.require _.flatMapDeep app.modules, (moduleContents, moduleName) -> [
-                    if moduleContents.index then moduleName else []
-                    if moduleContents.opts then moduleName + '/opts' else []
-                    _.map moduleContents.components, (p) -> if moduleName then moduleName + '/components/' + p else 'components/' + p
-                    _.map moduleContents.pages, (p) -> if moduleName then moduleName + '/pages/' + p else 'pages/' + p
-                    _.map moduleContents.model, (p) -> if moduleName then moduleName + '/model/' + p else 'model/' + p
+            bundler.require _.flatMapDeep app.modules, (moduleInfo, moduleName) -> [
+                    if moduleInfo.index then moduleName else []
+                    if moduleInfo.opts then moduleName + '/opts' else []
+                    _.map moduleInfo.components, (p) -> if moduleName then moduleName + '/components/' + p else 'components/' + p
+                    _.map moduleInfo.pages, (p) -> if moduleName then moduleName + '/pages/' + p else 'pages/' + p
+                    _.map moduleInfo.model, (p) -> if moduleName then moduleName + '/model/' + p else 'model/' + p
                 ]
             bundler.require app.components or []
 
@@ -40,7 +40,7 @@ module.exports = (app, options) ->
         for moduleInfo in options.modules
             if _.isString moduleInfo
                 moduleInfo = name: moduleInfo
-            moduleContents = app.modules[moduleInfo.name] =
+            app.modules[moduleInfo.name] = _.defaults moduleInfo,
                 path:
                     if moduleInfo.name
                         resolve.sync moduleInfo.name,
@@ -48,7 +48,7 @@ module.exports = (app, options) ->
                             paths: globalPaths
                     else
                         dirname
-                url: moduleInfo.url ? '/' + moduleInfo.name
+                url: '/' + moduleInfo.name
                 components: []
                 pages: []
                 model: []
@@ -56,7 +56,7 @@ module.exports = (app, options) ->
             try
                 require.resolve moduleInfo.name,
                     paths: globalPaths
-                moduleContents.index = true
+                moduleInfo.index = true
             catch e
                 throw e unless e.code == 'MODULE_NOT_FOUND'
 
@@ -64,29 +64,29 @@ module.exports = (app, options) ->
                 if moduleInfo.name
                     require.resolve moduleInfo.name + '/opts',
                         paths: globalPaths
-                    moduleContents.opts = true
+                    moduleInfo.opts = true
             catch e
                 throw e unless e.code == 'MODULE_NOT_FOUND'
                 
-            componentsPath = path.join moduleContents.path, 'components'
+            componentsPath = path.join moduleInfo.path, 'components'
             if fs.existsSync componentsPath
                 for name in fs.readdirSync componentsPath
                     compPath = path.join componentsPath, name
                     if fs.statSync(compPath).isDirectory()
-                        moduleContents.components.push name
+                        moduleInfo.components.push name
 
-            pagesPath = path.join moduleContents.path, 'pages'
+            pagesPath = path.join moduleInfo.path, 'pages'
             if fs.existsSync pagesPath
                 for name in fs.readdirSync pagesPath
                     ctrlPath = path.join pagesPath, name
                     if fs.statSync(ctrlPath).isDirectory()
-                        moduleContents.pages.push name
+                        moduleInfo.pages.push name
 
-            modelPath = path.join moduleContents.path, 'model'
+            modelPath = path.join moduleInfo.path, 'model'
             if fs.existsSync modelPath
                 for name in fs.readdirSync modelPath
                     name = path.parse(name).name
-                    moduleContents.model.push name
+                    moduleInfo.model.push name
 
     else
         app.modules = require 'app-modules'
@@ -95,15 +95,15 @@ module.exports = (app, options) ->
     for name in options.components or []
         app.component require name
 
-    for moduleName, moduleContents of app.modules
-        require moduleName if moduleContents.index
+    for moduleName, moduleInfo of app.modules
+        require moduleName if moduleInfo.index
 
-        if moduleContents.opts
+        if moduleInfo.opts
             opts = require moduleName + '/opts'
-            _.extend opts, moduleContents
+            _.extend opts, moduleInfo
 
-        for name in moduleContents.components
-            compPath = path.join moduleContents.path, 'components', name
+        for name in moduleInfo.components
+            compPath = path.join moduleInfo.path, 'components', name
             if moduleName
                 comp = require moduleName + '/components/' + name
                 comp::name = moduleName + ':' + name
@@ -112,8 +112,8 @@ module.exports = (app, options) ->
             comp::view = compPath
             app.component comp
 
-        for name in moduleContents.pages
-            ctrlPath = path.join moduleContents.path, 'pages', name
+        for name in moduleInfo.pages
+            ctrlPath = path.join moduleInfo.path, 'pages', name
             if moduleName
                 ctrl = require moduleName + '/pages/' + name
                 ctrl::name = moduleName + ':pages:' + name
@@ -122,14 +122,14 @@ module.exports = (app, options) ->
                 ctrl::name = 'pages:' + name
             ctrl::view = ctrlPath
             if _.isString ctrl::path
-                ctrl::path = moduleContents.url + ctrl::path
+                ctrl::path = moduleInfo.url + ctrl::path
             else
                 ctrl::path =
                     for p in ctrl::path
-                        moduleContents.url + p
+                        moduleInfo.url + p
                     
             app.controller ctrl
-        for name in moduleContents.model
+        for name in moduleInfo.model
             app.proto[_.capitalize name] = require moduleName + '/model/' + name
             
             
