@@ -93,7 +93,10 @@ module.exports = (app, options) ->
 
 
     for name in options.components or []
-        app.component require name
+        comp = require name
+        comp::name ?= name
+        comp::view ?= require.resolve name, paths: globalPaths
+        app.component comp
 
     for moduleInfo in options.modules
         if _.isString moduleInfo
