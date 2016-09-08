@@ -114,6 +114,7 @@ module.exports = (app, options) ->
                 comp::name = moduleName + ':' + name
             else
                 comp = require 'components/' + name
+                comp::name = name
             comp::view = compPath
             app.component comp
 
