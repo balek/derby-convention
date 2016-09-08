@@ -131,7 +131,7 @@ module.exports = (app, options) ->
                 ctrl::path = moduleInfo.url + ctrl::path  or  '/'
             else
                 ctrl::path =
-                    for p in ctrl::path
+                    for p in ctrl::path or []
                         moduleInfo.url + p
                     
             app.controller ctrl
