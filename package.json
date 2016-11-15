@@ -1,6 +1,6 @@
 {
   "name": "derby-convention",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "description": "",
   "main": "lib/index.js",
   "scripts": {
@@ -16,8 +16,7 @@
   },
   "peerDependencies": {
     "racer": "^0.6.0-alpha45",
-    "derby": "^0.6.0-alpha61",
-    "derby-templates": "^0.4.0"
+    "derby": "^0.6.0-alpha61"
   },
   "author": "Alexey Balekhov <a@balek.ru>",
   "license": "AGPL-3.0",
