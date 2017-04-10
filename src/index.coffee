@@ -1,8 +1,7 @@
 path = require 'path'
 
-_ = require 'lodash'
-resolve = require 'resolve'
 derby = require 'derby'
+resolve = derby.util.serverRequire module, 'resolve'
 
 util = require './util'
 
@@ -18,13 +17,15 @@ module.exports = (app, options) ->
         fs = derby.util.serverRequire module, 'fs'
 
         app.on 'bundle', (bundler) ->
-            bundler.require _.flatMapDeep app.modules, (moduleInfo, moduleName) -> [
+            modules = Object.values(app.modules).map (moduleInfo, moduleName) ->
+                [].concat [],
                     if moduleInfo.index then moduleName else []
                     if moduleInfo.opts then moduleName + '/opts' else []
-                    _.map moduleInfo.components, (p) -> if moduleName then moduleName + '/components/' + p else 'components/' + p
-                    _.map moduleInfo.pages, (p) -> if moduleName then moduleName + '/pages/' + p else 'pages/' + p
-                    _.map moduleInfo.model, (p) -> if moduleName then moduleName + '/model/' + p else 'model/' + p
-                ]
+                    moduleInfo.components.map (p) -> if moduleName then moduleName + '/components/' + p else 'components/' + p
+                    moduleInfo.pages.map (p) -> if moduleName then moduleName + '/pages/' + p else 'pages/' + p
+                    moduleInfo.model.map (p) -> if moduleName then moduleName + '/model/' + p else 'model/' + p
+            bundler.require [].concat modules...
+
             bundler.require app.components or []
 
             bundler.exclude 'app-modules'
@@ -38,9 +39,9 @@ module.exports = (app, options) ->
         app.modules = {}
         globalPaths = module.constructor.globalPaths
         for moduleInfo in options.modules
-            if _.isString moduleInfo
+            if typeof moduleInfo == 'string'
                 moduleInfo = name: moduleInfo
-            app.modules[moduleInfo.name] = _.defaults moduleInfo,
+            defaults =
                 path:
                     if moduleInfo.name
                         resolve.sync moduleInfo.name,
@@ -52,6 +53,9 @@ module.exports = (app, options) ->
                 components: []
                 pages: []
                 model: []
+            for k, v of defaults
+                moduleInfo[k] ?= v
+            app.modules[moduleInfo.name] = moduleInfo
 
             try
                 require.resolve moduleInfo.name,
@@ -96,16 +100,18 @@ module.exports = (app, options) ->
         app.component require name
 
     for moduleInfo in options.modules
-        if _.isString moduleInfo
+        if typeof moduleInfo == 'string'
             moduleInfo = name: moduleInfo
         moduleName = moduleInfo.name
-        _.defaults moduleInfo, app.modules[moduleName]
+
+        for k, v of app.modules[moduleName]
+            moduleInfo[k] ?= v
 
         require moduleName if moduleInfo.index
 
         if moduleInfo.opts
             opts = require moduleName + '/opts'
-            _.assign opts, moduleInfo
+            Object.assign opts, moduleInfo
 
         for name in moduleInfo.components
             compPath = path.join moduleInfo.path, 'components', name
@@ -127,7 +133,7 @@ module.exports = (app, options) ->
                 ctrl = require 'pages/' + name
                 ctrl::name = 'pages:' + name
             ctrl::view = ctrlPath
-            if _.isString ctrl::path
+            if typeof ctrl::path == 'string'
                 ctrl::path = moduleInfo.url + ctrl::path  or  '/'
             else
                 ctrl::path =
@@ -136,7 +142,11 @@ module.exports = (app, options) ->
                     
             app.controller ctrl
         for name in moduleInfo.model
-            app.proto[_.capitalize name] = require moduleName + '/model/' + name
+            words =
+                for w in name.split(/[-_]/)
+                    w[0].toUpperCase() + w[1..]
+            key = words.join ''
+            app.proto[key] = require moduleName + '/model/' + name
             
             
             
