@@ -9,14 +9,14 @@
     "postpublish": "git push"
   },
   "dependencies": {
-    "derby-controller": "^0.6.0",
+    "derby-controller": "^0.7.0",
     "lodash": "^4.14.1",
     "node-sass": "^3.7.0",
     "resolve": "^1.1.7"
   },
   "peerDependencies": {
-    "racer": "^0.6.0-alpha45",
-    "derby": "^0.6.0-alpha61"
+    "racer": "^0.x",
+    "derby": "^0.x"
   },
   "author": "Alexey Balekhov <a@balek.ru>",
   "license": "AGPL-3.0",
