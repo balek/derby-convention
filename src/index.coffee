@@ -7,6 +7,7 @@ util = require './util'
 
 
 derby.use require '../subcomponents'
+derby.use require 'derby-ar'
 
 module.exports = (app, options) ->
     app.use require 'derby-controller'
@@ -17,7 +18,8 @@ module.exports = (app, options) ->
         fs = derby.util.serverRequire module, 'fs'
 
         app.on 'bundle', (bundler) ->
-            modules = Object.values(app.modules).map (moduleInfo, moduleName) ->
+            modules = Object.values(app.modules).map (moduleInfo) ->
+                moduleName = moduleInfo.name
                 [].concat [],
                     if moduleInfo.index then moduleName else []
                     if moduleInfo.opts then moduleName + '/opts' else []
@@ -89,6 +91,9 @@ module.exports = (app, options) ->
             modelPath = path.join moduleInfo.path, 'model'
             if fs.existsSync modelPath
                 for name in fs.readdirSync modelPath
+                    file = path.resolve modelPath, name
+                    stat = fs.statSync file
+                    continue if stat.isDirectory()
                     name = path.parse(name).name
                     moduleInfo.model.push name
 
@@ -141,13 +146,17 @@ module.exports = (app, options) ->
                         moduleInfo.url + p
                     
             app.controller ctrl
+            
         for name in moduleInfo.model
             words =
                 for w in name.split(/[-_]/)
                     w[0].toUpperCase() + w[1..]
             key = words.join ''
-            app.proto[key] = require moduleName + '/model/' + name
-            
+
+            model = require moduleName + '/model/' + name
+            model::name = name
+            derby.model name, model::pattern, model
+    derby.Model.ChildModel::constructor = derby.Model.ChildModel
             
             
     app.loadStyles dirname + '/styles'
