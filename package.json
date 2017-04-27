@@ -9,7 +9,7 @@
     "postpublish": "git push"
   },
   "dependencies": {
-    "derby-ar": "github:dmapper/derby-ar",
+    "derby-ar": "git+https://github.com/dmapper/derby-ar",
     "derby-controller": "^0.7.0",
     "lodash": "^4.14.1",
     "node-sass": "^3.7.0",
