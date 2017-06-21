@@ -146,6 +146,10 @@ module.exports = (app, options) ->
                         moduleInfo.url + p
                     
             app.controller ctrl
+
+            for comp in ctrl::components or []
+                comp::name = "#{ctrl::name}:#{comp::name}"
+                app.component comp
             
         for name in moduleInfo.model
             words =
