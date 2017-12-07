@@ -66,6 +66,12 @@ module.exports = function (derby, options) {
     if (constructor.prototype instanceof Component) return;
     // Otherwise, replace its prototype with an instance of Component
     var oldPrototype = constructor.prototype;
+    if (Object.setPrototypeOf) {
+      while (Object.getPrototypeOf(oldPrototype) !== Object.prototype)
+          oldPrototype = Object.getPrototypeOf(oldPrototype);
+      Object.setPrototypeOf(oldPrototype, Component.prototype);
+      return;
+    }
     constructor.prototype = new Component();
     util.mergeInto(constructor.prototype, oldPrototype);
   }
