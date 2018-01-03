@@ -91,6 +91,7 @@ module.exports = (app, options) ->
             modelPath = path.join moduleInfo.path, 'model'
             if fs.existsSync modelPath
                 for name in fs.readdirSync modelPath
+                    continue if name == 'locales.yml'
                     file = path.resolve modelPath, name
                     stat = fs.statSync file
                     continue if stat.isDirectory()
