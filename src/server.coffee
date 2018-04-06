@@ -248,7 +248,7 @@ module.exports =
 
         for r in resources.privileges or []
             privileges = require r.requirePath
-            prefix = if r.name then "#{r.name}:" else ''
+            prefix = if r.fullName then "#{r.fullName}:" else ''
             for name, permissions of privileges
                 fullName = prefix + name
                 for role in permissions.$roles or []
