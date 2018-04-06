@@ -17,6 +17,7 @@ resourceTypes =
     tasks:
         fileName: 'tasks'
         directory: true
+        forceIncludeName: true
         parents: ['module', 'server', 'pages', 'components']
 
     taskDir:
@@ -57,7 +58,7 @@ resourceTypes =
     views: [
         fileName: 'views'
         directory: true
-        parents: ['module', 'server', 'pages', 'components', 'tasks', 'task']
+        parents: ['module', 'server', 'pages', 'components', 'tasks', 'taskDir']
     ,
         fileName: '*'
         directory: true
@@ -67,7 +68,7 @@ resourceTypes =
     view: [
         fileName: 'index'
         extensions: ['.html', '.pug']
-        parents: ['module', 'server', 'pages', 'components', 'tasks', 'task']
+        parents: ['module', 'server', 'pages', 'components', 'tasks', 'taskDir']
     ,
         fileName: '*'
         extensions: ['.html', '.pug']
@@ -133,7 +134,7 @@ resourceTypes =
     locales:
         fileName: 'locales'
         extensions: ['.yml']
-        parents: ['module', 'server', 'pages', 'models', 'components', 'tasks', 'task']
+        parents: ['module', 'server', 'pages', 'models', 'components', 'tasks', 'taskDir']
 
     privileges:
         fileName: 'privileges'
@@ -143,12 +144,12 @@ resourceTypes =
     hooks:
         fileName: 'hooks'
         require: true
-        parents: ['module', 'server', 'pages', 'components', 'tasks', 'task']
+        parents: ['module', 'server', 'pages', 'components']
 
     rpc:
         fileName: 'rpc'
         require: true
-        parents: ['module', 'server', 'pages', 'components', 'tasks', 'task']
+        parents: ['module', 'server', 'pages', 'components']
 
 
 typesChildren = {}
