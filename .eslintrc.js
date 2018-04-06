@@ -14,6 +14,11 @@ module.exports = {
         // "ecmaVersion": 6
     },
     "extends": ["eslint:recommended",  "plugin:node/recommended"],
+    "settings": {
+        "node": {
+            "allowModules": ["derby"]
+        }
+    },
     "rules": {
         "no-unused-vars": ["warn", { "vars": "all", "args": "after-used", "ignoreRestSiblings": false }],
         "node/no-missing-require": ["error", {
