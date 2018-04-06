@@ -1,168 +1,62 @@
-path = require 'path'
-
 derby = require 'derby'
-resolve = derby.util.serverRequire module, 'resolve'
-
-util = require './util'
 
 
 derby.use require '../subcomponents'
-derby.use require 'derby-ar'
 
-module.exports = (app, options) ->
+
+module.exports = (app) ->
+    resources =
+        if derby.util.isServer
+            module.exports.loadApp app
+            module.exports.resources
+        else
+            ### eslint-disable-next-line node/no-missing-require ###
+            require '_auto-loaded-modules'
+        
     app.use require 'derby-controller'
-    app.serverUse module, './sass-auto'
+    # if resources.locales
+    #     app.use require 'derby-l10n'
+    if resources.rpc
+        derby.use require 'racer-rpc'
+    # if resources.privileges
+    #     Object.assign app.proto, require 'sharedb-access'
 
-    dirname = path.dirname app.filename
-    if derby.util.isServer
-        fs = derby.util.serverRequire module, 'fs'
+    for fileInfo in resources.component
+        component = require fileInfo.requirePath
+        component::name = fileInfo.fullName
+        app.component component
 
-        app.on 'bundle', (bundler) ->
-            modules = Object.values(app.modules).map (moduleInfo) ->
-                moduleName = moduleInfo.name
-                [].concat [],
-                    if moduleInfo.index then moduleName else []
-                    if moduleInfo.opts then moduleName + '/opts' else []
-                    moduleInfo.components.map (p) -> if moduleName then moduleName + '/components/' + p else 'components/' + p
-                    moduleInfo.pages.map (p) -> if moduleName then moduleName + '/pages/' + p else 'pages/' + p
-                    moduleInfo.model.map (p) -> if moduleName then moduleName + '/model/' + p else 'model/' + p
-            bundler.require [].concat modules...
+    for fileInfo in resources.page
+        page = require fileInfo.requirePath
+        page::$path = fileInfo.url or '/'
+        if page::$render == false
+            delete page::$render
+        else
+            page::name = fileInfo.fullName
+        app.controller page
 
-            bundler.require app.components or []
-
-            bundler.exclude 'app-modules'
-            a = new require('stream').Readable()
-            a.push 'module.exports = ' + JSON.stringify app.modules
-            a.push null
-            bundler.require a, expose: 'app-modules'
-
-
-        app.components = options.components
-        app.modules = {}
-        globalPaths = module.constructor.globalPaths
-        for moduleInfo in options.modules
-            if typeof moduleInfo == 'string'
-                moduleInfo = name: moduleInfo
-            defaults =
-                path:
-                    if moduleInfo.name
-                        resolve.sync moduleInfo.name,
-                            isFile: util.isDirectory
-                            paths: globalPaths
-                    else
-                        dirname
-                url: '/' + moduleInfo.name
-                components: []
-                pages: []
-                model: []
-            for k, v of defaults
-                moduleInfo[k] ?= v
-            app.modules[moduleInfo.name] = moduleInfo
-
-            try
-                require.resolve moduleInfo.name,
-                    paths: globalPaths
-                moduleInfo.index = true
-            catch e
-                throw e unless e.code == 'MODULE_NOT_FOUND'
-
-            try
-                if moduleInfo.name
-                    require.resolve moduleInfo.name + '/opts',
-                        paths: globalPaths
-                    moduleInfo.opts = true
-            catch e
-                throw e unless e.code == 'MODULE_NOT_FOUND'
-                
-            componentsPath = path.join moduleInfo.path, 'components'
-            if fs.existsSync componentsPath
-                for name in fs.readdirSync componentsPath
-                    compPath = path.join componentsPath, name
-                    if fs.statSync(compPath).isDirectory()
-                        moduleInfo.components.push name
-
-            pagesPath = path.join moduleInfo.path, 'pages'
-            if fs.existsSync pagesPath
-                for name in fs.readdirSync pagesPath
-                    ctrlPath = path.join pagesPath, name
-                    if fs.statSync(ctrlPath).isDirectory()
-                        moduleInfo.pages.push name
-
-            modelPath = path.join moduleInfo.path, 'model'
-            if fs.existsSync modelPath
-                for name in fs.readdirSync modelPath
-                    continue if name == 'locales.yml'
-                    file = path.resolve modelPath, name
-                    stat = fs.statSync file
-                    continue if stat.isDirectory()
-                    name = path.parse(name).name
-                    moduleInfo.model.push name
-
-    else
-        app.modules = require 'app-modules'
-
-
-    for name in options.components or []
-        app.component require name
-
-    for moduleInfo in options.modules
-        if typeof moduleInfo == 'string'
-            moduleInfo = name: moduleInfo
-        moduleName = moduleInfo.name
-
-        for k, v of app.modules[moduleName]
-            moduleInfo[k] ?= v
-
-        require moduleName if moduleInfo.index
-
-        if moduleInfo.opts
-            opts = require moduleName + '/opts'
-            Object.assign opts, moduleInfo
-
-        for name in moduleInfo.components
-            compPath = path.join moduleInfo.path, 'components', name
-            if moduleName
-                comp = require moduleName + '/components/' + name
-                comp::name = moduleName + ':' + name
-            else
-                comp = require 'components/' + name
-                comp::name = name
-            comp::view = compPath
+        for comp in page::components or []
+            comp::name = "#{page::name}:#{comp::name}"
             app.component comp
 
-        for name in moduleInfo.pages
-            ctrlPath = path.join moduleInfo.path, 'pages', name
-            if moduleName
-                ctrl = require moduleName + '/pages/' + name
-                ctrl::name = moduleName + ':pages:' + name
-            else
-                ctrl = require 'pages/' + name
-                ctrl::name = 'pages:' + name
-            ctrl::view = ctrlPath
-            if typeof ctrl::path == 'string'
-                ctrl::path = moduleInfo.url + ctrl::path  or  '/'
-            else
-                ctrl::path =
-                    for p in ctrl::path or []
-                        moduleInfo.url + p
-                    
-            app.controller ctrl
 
-            for comp in ctrl::components or []
-                comp::name = "#{ctrl::name}:#{comp::name}"
-                app.component comp
-            
-        for name in moduleInfo.model
-            words =
-                for w in name.split(/[-_]/)
-                    w[0].toUpperCase() + w[1..]
-            key = words.join ''
+    if resources.model
+        derby.use require 'derby-ar'
+        # Support for CoffeeScript class inheritance
+        derby.Model.ChildModel::constructor = derby.Model.ChildModel
 
-            model = require moduleName + '/model/' + name
-            model::name = name
-            derby.model name, model::pattern, model
-    derby.Model.ChildModel::constructor = derby.Model.ChildModel
-            
-            
-    app.loadStyles dirname + '/styles'
-    app.loadViews dirname + '/views'
+    for fileInfo in resources.model
+        model = require fileInfo.requirePath
+        model::name = fileInfo.name
+        derby.model model::name, model::pattern, model
+        
+        
+    for fileInfo in resources.modules
+        modules = require fileInfo.requirePath
+        for m in modules
+            continue unless m.opts
+            opts = require "#{m.name}/opts"
+            Object.assign opts, m.opts
+
+
+Object.assign module.exports, derby.util.serverRequire module, './server'
