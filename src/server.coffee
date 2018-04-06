@@ -220,6 +220,11 @@ walk = (dirInfo, resources = {}) ->
                             type: m.type or 'module'
                             filePath: modulePath
                             requirePath: m.name
+                            fullName:
+                                if dirInfo.fullName
+                                    "#{dirInfo.fullName}:#{m.name}"
+                                else
+                                    m.name
                         if m.url
                             moduleInfo.urlPart = m.url
                         walk moduleInfo, resources
