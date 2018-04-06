@@ -138,7 +138,7 @@ resourceTypes =
     privileges:
         fileName: 'privileges'
         require: true
-        parents: ['module', 'pages', 'components']
+        parents: ['module', 'server', 'pages', 'components']
 
     hooks:
         fileName: 'hooks'
@@ -261,7 +261,7 @@ module.exports =
         for r in resources.rpc
             funcs = require r.requirePath
             for name, func of funcs
-                do (name) ->
+                do (name, func) ->
                     backend.rpc.on name, (args..., cb) ->
                         if Object::toString.call(cb) != '[object Function]'
                             args.push cb
