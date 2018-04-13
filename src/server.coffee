@@ -151,6 +151,11 @@ resourceTypes =
         require: true
         parents: ['module', 'server', 'pages', 'components']
 
+    queries:
+        fileName: 'queries'
+        require: true
+        parents: ['module', 'server', 'pages', 'components']
+
 
 typesChildren = {}
 for typeName, typeInfos of resourceTypes
@@ -247,8 +252,6 @@ module.exports =
     loadBackend: (backend) ->
         # if resources.hooks
         #     require('sharedb-hooks') backend
-        # if resources.queries
-        #     require('sharedb-server-query') backend
         # if resources.privileges
         #     require('sharedb-access') backend
 
@@ -282,6 +285,16 @@ module.exports =
 
         for r in resources.hooks
             backend.hooks require r.requirePath
+
+
+        if resources.queries and not resources.privileges
+            require('sharedb-server-query') backend
+
+        for r in resources.queries
+            queries = require r.requirePath
+            for collection, collectionQueries of queries
+                for queryName, query of collectionQueries
+                    backend.addServerQuery collection, queryName, query
 
 
         if resources.model
