@@ -156,6 +156,10 @@ resourceTypes =
         require: true
         parents: ['module', 'server', 'pages', 'components']
 
+    node_modules:
+        fileName: 'node_modules'
+        directory: true
+        parents: ['module', 'components', 'pages']
 
 typesChildren = {}
 for typeName, typeInfos of resourceTypes
