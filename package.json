@@ -1,14 +1,13 @@
 {
   "name": "derby-convention",
-  "version": "0.6.5",
+  "version": "0.6.6",
   "description": "",
   "main": "lib/index.js",
   "engines": {
     "node": ">=8.0.0"
   },
   "scripts": {
-    "build": "coffee -bo lib src",
-    "prepublish": "npm run build",
+    "prepare": "npm run build",
     "postpublish": "git push"
   },
   "dependencies": {
